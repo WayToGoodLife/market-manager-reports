@@ -1,0 +1,37 @@
+# .github/workflows/alert-notifier.yml
+name: Отправка уведомлений
+
+on:
+  workflow_dispatch:  # Только ручной запуск (из плагина)
+    inputs:
+      user_telegram_id:
+        description: 'Telegram Chat ID'
+        required: false
+      user_vk_id:
+        description: 'VK User ID'
+        required: false
+      message_text:
+        description: 'Текст уведомления'
+        required: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Отправка в Telegram
+        if: ${{ github.event.inputs.user_telegram_id != '' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ github.event.inputs.user_telegram_id }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: ${{ github.event.inputs.message_text }}
+
+      - name: Отправка в VK
+        if: ${{ github.event.inputs.user_vk_id != '' }}
+        run: |
+          curl -X POST "https://api.vk.com/method/messages.send" \
+            -d "user_id=${{ github.event.inputs.user_vk_id }}" \
+            -d "random_id=$(date +%s)" \
+            -d "message=${{ github.event.inputs.message_text }}" \
+            -d "access_token=${{ secrets.VK_ACCESS_TOKEN }}" \
+            -d "v=5.131"
